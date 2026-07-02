@@ -417,21 +417,33 @@ Screen 组件接 callback props（`onTabChange`、`onOpen`、`onClose`、`onTogg
 
 ## 工作流程
 
+### 先路由：一张表定入口
+
+收到任务先扫一遍这张表，确定走哪条线再开工（多信号同时命中按行序叠加）：
+
+| 任务信号 | 入口 |
+|---------|------|
+| 提到具体品牌/产品名 | 核心原则#0 事实验证 → §1.a 资产协议 → 标准流程 |
+| 没给风格参考（最常见） | Fallback 顾问模式 Phase 1-5 → 回标准流程 Step 2 |
+| 幻灯片/PPT | 标准流程 + Step 1 deck 交付链 + 「技术红线」架构选型 |
+| 动画/导出 MP4/GIF | 标准流程 + Step 9；动手前必读 `references/animation-pitfalls.md` |
+| 带解说长视频（≥1分钟） | Step 9.5 → `references/voiceover-pipeline.md` |
+| launch film/品牌宣传片（「Apple级」「超级碗品质」） | 先写万字 director's notes → `references/launch-film-director-notes.md` |
+| App/iOS 原型 | 「App / iOS 原型专属守则」（覆盖通用规则） |
+| 评审/打分 | Step 10 → `references/critique-guide.md` |
+| 弱 runtime（无 subagent/非 Claude） | 上述任一条 + 「弱 runtime 降级模式」 |
+
+例：「做个咖啡主题的 PPT」= 第 2 行 + 第 3 行——Fallback 出三版（咖啡是主题不是品牌，不找 logo），deck 骨架统一用概览墙模板。
+
 ### 标准流程（用TaskCreate追踪）
 
 1. **理解需求**：
    - 🔍 **0. 事实验证（涉及具体产品/技术时必做，优先级最高）**：任务涉及具体产品/技术/事件（DJI Pocket 4、Gemini 3 Pro、Nano Banana Pro、某新 SDK 等）时，**第一个动作**是 `WebSearch` 验证其存在性、发布状态、最新版本、关键规格。把事实写入 `product-facts.md`。详见「核心原则 #0」。**这步做在问 clarifying questions 之前**——事实错了问什么都歪。
    - 新任务或模糊任务必须问clarifying questions，详见 `references/workflow.md`。一次focused一轮问题通常够，小修小补跳过。
    - 🛑 **检查点1：问题清单一次性发给用户，等用户批量答完再往下走**。不要边问边做。
-   - 🛑 **幻灯片/PPT 任务：HTML 聚合演示版永远是默认基础产物**（不管用户最终要什么格式）：
-     - **必做**：每页独立 HTML + `assets/deck_index.html` 聚合（重命名为 `index.html`，编辑 MANIFEST 列所有页），浏览器里键盘翻页、全屏演讲——这是幻灯片作品的"源"
-     - **交付流程铁律（不问格式，HTML deck 是强推的唯一基础路径）**：开工**绝不询问**用户要 PDF / PPTX——直接做 HTML deck（带 3D 概览墙 + 全屏演示，效果最好，这是我们想强推的方向）。
-     - **HTML deck 完成后**：① **自动**用 `scripts/export_deck_pdf.mjs` 生成 PDF 版交付（不问，直接给）；② 再**询问是否需要可编辑 PPTX**，要的话用 `scripts/export_deck_pptx.mjs` 尽量加工导出。
-     - 🔴 **绝不为了能转 PPTX 而牺牲 HTML 的设计质量**：PPTX 是事后 best-effort 衍生物，**不要**为了迁就 html2pptx 的 4 条硬约束就从第一行约束/降级 HTML 设计。HTML deck 的视觉自由度永远优先；PPTX 转不出某些效果就如实告诉用户「这版 PPTX 损失了 X，完整效果看 HTML / PDF」。
-     - **≥ 5 页 deck 必须先做 2 页 showcase 定 grammar 再批量推**（见 `references/slide-decks.md` 的「批量制作前先做 showcase」章节）——跳过这步 = 方向错返工 N 次而非 2 次
-     - 详见 `references/slide-decks.md` 开头「HTML 优先架构 + 交付格式决策树」
+   - 🛑 **幻灯片/PPT 任务走固定交付链，开工不问格式**：HTML deck（每页独立 HTML + `assets/deck_index.html` 概览墙）→ 完成后**自动**出 PDF（`scripts/export_deck_pdf.mjs`，不问直接给）→ **询问**才出可编辑 PPTX（best-effort 衍生物，**绝不**为迁就 html2pptx 约束而降级 HTML 设计，转不出就如实说损失了什么）。**≥5 页必须先做 2 页 showcase 定 grammar 再批量**——跳过 = 方向错返工 N 次而非 2 次。完整规则 + 交付格式决策树见 `references/slide-decks.md`。
    - ⚡ **只要用户没给明确风格参考（没 design system、没截图/Figma、没指定某某具体风格）→ 走「设计方向顾问（Fallback 模式）」大节，完成 Phase 1-5（用户从三版里选定方向）后，再回到这里 Step 2**。门槛要低：「做个XX」只要不带风格词就触发——宁可多推 3 个方向让用户选，也不要模型自己闷头选一个极简就开做。
-2. **探索资源 + 抽核心资产**（不只是抽色值）：读 design system、linked files、上传的截图/代码。**涉及具体品牌时必走 §1.a「核心资产协议」五步**（问→按类型搜→按类型下载 logo/产品图/UI→验证+提取→写 `brand-spec.md` 含所有资产路径）。
+2. **探索资源 + 抽核心资产**（不只是抽色值）：读 design system、linked files、上传的截图/代码。**涉及具体品牌时必走 §1.a「核心资产协议」五步**，产出 `brand-spec.md`。
    - 🛑 **检查点2·资产自检**：开工前确认核心资产到位——实体产品要有产品图（不是 CSS 剪影）、数字产品要有 logo+UI 截图、色值从真实 HTML/SVG 抽取。缺了就停下补，不硬做。
    - 如果用户没给 context 且挖不出资产，先走设计方向顾问 Fallback，再按 `references/design-context.md` 的品位锚点兜底。
 3. **先答五问，再规划系统**：**这一步的前半段比所有 CSS 规则更决定输出**。
@@ -446,13 +458,13 @@ Screen 组件接 callback props（`onTabChange`、`onOpen`、`onClose`、`onTogg
    五问答完再 vocalize 设计系统（色彩/字型/layout 节奏/component pattern）——**系统要服务于答案，不是先选系统再塞内容**。
    **交付要求**：每版设计交付时写一句「form 来自内容的哪里」，写不出来 = 在套模板，回去重答第五问。
 
-   🛑 **检查点2：五问答案 + 系统口头说出来等用户点头，再动手写代码**。方向错了晚改比早改贵 100 倍。
+   🛑 **检查点3：五问答案 + 系统口头说出来等用户点头，再动手写代码**。方向错了晚改比早改贵 100 倍。
 4. **构建文件夹结构**：`项目名/` 下放主HTML、需要的assets拷贝（不要bulk copy >20个文件）。
 5. **Junior pass**：HTML里写assumptions+placeholders+reasoning comments。
-   🛑 **检查点3：尽早show给用户（哪怕只是灰色方块+标签），等反馈再写组件**。
+   🛑 **检查点4：尽早show给用户（哪怕只是灰色方块+标签），等反馈再写组件**。
 6. **Full pass**：填placeholder，做variations，加Tweaks。做到一半再show一次，不要等全做完。
 7. **验证**：用Playwright截图（见 `references/verification.md`），检查控制台错误，发给用户。
-   🛑 **检查点4：交付前自己肉眼过一遍浏览器**。AI写的代码经常有interaction bug。
+   🛑 **检查点5：交付前自己肉眼过一遍浏览器**。AI写的代码经常有interaction bug。
 8. **总结**：极简，只说caveats和next steps。
 9. **（默认）导出视频 · 必带 SFX + BGM**：动画 HTML 的**默认交付形态是带音频的 MP4**，不是纯画面。无声版本等于半成品——用户潜意识感知「画在动但没声音响应」，廉价感的根源就在这里。流水线：
    - `scripts/render-video.js` 录 25fps 纯画面 MP4（只是中间产物，**不是成品**）
@@ -474,6 +486,7 @@ Screen 组件接 callback props（`onTabChange`、`onOpen`、`onClose`、`onTogg
 10. **（可选）专家评审**：用户若提「评审」「好不好看」「review」「打分」，或你对产出有疑问想主动质检，按 `references/critique-guide.md` 走 5 维度评审——哲学一致性 / 视觉层级 / 细节执行 / 功能性 / 创新性各 0-10 分，输出总评 + Keep（做得好的）+ Fix（严重程度 ⚠️致命 / ⚡重要 / 💡优化）+ Quick Wins（5 分钟能做的前 3 件事）。评审设计不评设计师。
 
 **检查点原则**：碰到🛑就停下，明确告诉用户"我做了X，下一步打算Y，你确认吗？"然后真的**等**。不要说完自己就开始做。
+**两套检查点的衔接**：主干用 🛑 检查点1-5，Fallback 用 🔴 CHECKPOINT（Phase 3.5 图片前置 + logo 子门）。从 Fallback Phase 1-5 走完回到主干 Step 2 时，检查点1（问题清单）已被 Phase 1 的澄清覆盖，**跳过不重复问**；检查点2 起照常执行。
 
 ### 问问题的要点
 
@@ -499,14 +512,12 @@ Screen 组件接 callback props（`onTabChange`、`onOpen`、`onClose`、`onTogg
 
 **原则**：异常时**先告诉用户发生了什么**（1句话），再按表处理。不要静默决策。
 
-## 反AI slop速查
+## 反AI slop速查（补充项）
+
+静态设计的完整反slop规则见「核心哲学 §6」（字体/色彩/容器/图像的避免与采用都在 §6.2-6.3，字体配对逻辑见 `references/typography.md`）。以下只列 §6 没覆盖的补充项：
 
 | 类别 | 避免 | 采用 |
 |------|------|------|
-| 字体 | Inter/Roboto/Arial/系统字体 | 有特点的display+body配对（配对逻辑见 references/typography.md） |
-| 色彩 | 紫色渐变、凭空新颜色 | 品牌色/oklch定义的和谐色 |
-| 容器 | 圆角+左border accent | 诚实的边界/分隔 |
-| 图像 | SVG画人画物 | 真实素材或placeholder |
 | 图标 | **装饰性** icon 每处都配（撞 slop）| **承载差异化信息**的密度元素必须保留——不要把产品特色也一并减掉 |
 | 填充 | 编造stats/quotes装饰 | 留白，或问用户要真内容 |
 | 动画 | 散落的微交互 | 一次well-orchestrated的page load |
@@ -520,6 +531,7 @@ Screen 组件接 callback props（`onTabChange`、`onOpen`、`onClose`、`onTogg
 1. **never** 写 `const styles = {...}`——多组件时命名冲突会炸。**必须**给唯一名字：`const terminalStyles = {...}`
 2. **scope不共享**：多个`<script type="text/babel">`之间组件不通，必须用`Object.assign(window, {...})`导出
 3. **never** 用 `scrollIntoView`——会搞坏容器滚动，用其他DOM scroll方法
+4. **手写 Stage / Sprite**（不用 `assets/animations.jsx`）必须实现两件事：(a) tick 第一帧同步设 `window.__ready = true` (b) 检测 `window.__recording === true` 时强制 loop=false——否则录视频必出问题
 
 **固定尺寸内容**（幻灯片/视频）必须自己实现JS缩放，用auto-scale + letterboxing。
 
@@ -636,12 +648,3 @@ Skill 路径引用均采用**相对本 skill 根目录**的形式（`references/
   </div>
   ```
 
-## 核心提醒
-
-- **事实验证先于假设**（核心原则 #0）：涉及具体产品/技术/事件（DJI Pocket 4、Gemini 3 Pro 等）必须先 `WebSearch` 验证存在性和状态，不凭训练语料断言。
-- **Embody专家**：做幻灯片时是幻灯片设计师，做动画时是动画师。不是写Web UI。
-- **正文哲学速记**：Junior 先 show → 3+ variations → 诚实 placeholder → 时时反 slop → 涉品牌走资产协议（§1.a，不用 CSS 剪影代替产品图）。展开见上文「核心哲学」各节。
-- **做动画之前**：必读 `references/animation-pitfalls.md`——里面 14 条规则每条都来自真实踩过的坑，跳过会让你重做 1-3 轮。
-- **手写 Stage / Sprite**（不用 `assets/animations.jsx`）：必须实现两件事——(a) tick 第一帧同步设 `window.__ready = true` (b) 检测 `window.__recording === true` 时强制 loop=false。否则录视频必出问题。
-- **做带解说的动画**（≥1 分钟，长概念视频）：**整片是一个连续的运动叙事，不是一组独立场景**。选 1-2 个 hero element 跨 scene 持续存在，scene 之间 morph 不切。每个 Scene 各自独立 layout + cue 用 fade-up + 整页 opacity 切换 = 带配音的 PowerPoint = 质感归零。完整规则见 `references/voiceover-pipeline.md` 「铁律」章节。这条规则**强调多少遍都不为过**。
-- **做 launch film / 品牌宣传片**（20-30 秒级，用户提「Apple 级别」「超级碗品质感」「10x 细节」）：**先写万字 director's notes 再动手做动画**——5 大部分结构（Statement / Visual System / Story Arc / Storyboard / Manifest），12-15 镜 shot-by-shot spec，每镜含 10 字段（含 anti-slop 自检 + why this shot exists）。完整流程 + 触发判断 + 多视角并行策略见 `references/launch-film-director-notes.md`。**实战教训**：跳过这步 = 程序员视角动画（节奏匀速、缺 climax、slogan 撞、缺叙事弧）；走完这步 = 一次过、每帧 pause 都耐看。
